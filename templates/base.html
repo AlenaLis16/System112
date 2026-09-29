@@ -1,0 +1,22 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}ГБУ Система 112{% endblock %}</title>
+<link rel="stylesheet" href="{% static 'training/app.css' %}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<div class="topbar">
+<div class="brand">ГБУ Система 112</div><div class="top-date" id="clock"></div>
+<div class="userbox">{% if request.user.is_authenticated %}<span>{{ request.user.get_full_name|default:request.user.username }}</span><a href="{% url 'logout' %}">Выход</a>{% endif %}</div>
+</div>
+<div class="layout">
+<aside class="sidebar"><div class="side-title">АРМ ДДС</div>{% if request.user.is_authenticated %}{% if request.user.is_superuser or request.user.profile.role == "teacher" %}<a href="{% url 'teacher_dashboard' %}">Рабочая панель</a><a href="{% url 'scenario_list' %}">Учебные карточки</a><a href="{% url 'assignment_create' %}">Назначить занятие</a><a href="{% url 'report_list' %}">Результаты обучения</a><a href="/admin/">Администрирование</a>{% else %}<a href="{% url 'trainee_dashboard' %}">Мои занятия</a>{% endif %}{% endif %}</aside>
+<main class="content">{% if messages %}<div class="messages">{% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% block content %}{% endblock %}</main>
+</div>
+<script>function updateClock(){const d=new Date(),days=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'],p=n=>String(n).padStart(2,'0'),e=document.getElementById('clock');if(e)e.textContent=days[d.getDay()]+', '+p(d.getDate())+'.'+p(d.getMonth()+1)+'.'+d.getFullYear()+'   '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds())}updateClock();setInterval(updateClock,1000);</script>
+{% block scripts %}{% endblock %}
+</body></html>

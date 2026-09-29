@@ -1,0 +1,127 @@
+from django.conf import settings
+from django.db import migrations, models
+import django.db.models.deletion
+import django.utils.timezone
+
+class Migration(migrations.Migration):
+    initial = True
+    dependencies = [migrations.swappable_dependency(settings.AUTH_USER_MODEL)]
+    operations = [
+        migrations.CreateModel(
+            name="Profile",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("role", models.CharField(choices=[("teacher","Преподаватель"),("trainee","Обучающийся")], default="trainee", max_length=20)),
+                ("group_name", models.CharField(blank=True, max_length=120)),
+                ("position", models.CharField(blank=True, max_length=180)),
+                ("phone", models.CharField(blank=True, max_length=30)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("user", models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name="profile", to=settings.AUTH_USER_MODEL)),
+            ],
+        ),
+        migrations.CreateModel(
+            name="Scenario",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("title", models.CharField(max_length=200)),
+                ("category", models.CharField(max_length=160)),
+                ("classifier_code", models.CharField(blank=True, max_length=30)),
+                ("difficulty", models.PositiveSmallIntegerField(choices=[(1,"Базовая"),(2,"Средняя"),(3,"Повышенная")], default=1)),
+                ("time_limit", models.PositiveIntegerField(default=180)),
+                ("reaction_limit", models.PositiveIntegerField(default=30)),
+                ("description", models.TextField(blank=True)),
+                ("caller_name", models.CharField(default="Заявитель", max_length=120)),
+                ("caller_phone", models.CharField(default="8 495 000-00-00", max_length=30)),
+                ("initial_message", models.TextField(blank=True)),
+                ("dialogue", models.JSONField(blank=True, default=list)),
+                ("expected", models.JSONField(blank=True, default=dict)),
+                ("services", models.JSONField(blank=True, default=list)),
+                ("fields", models.JSONField(blank=True, default=list)),
+                ("ai_generated", models.BooleanField(default=False)),
+                ("approved", models.BooleanField(default=True)),
+                ("source_code", models.CharField(blank=True, max_length=60)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("created_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="created_scenarios", to=settings.AUTH_USER_MODEL)),
+            ],
+            options={"ordering":["category","title"]},
+        ),
+        migrations.CreateModel(
+            name="Assignment",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("status", models.CharField(choices=[("new","Назначено"),("active","В работе"),("done","Завершено")], default="new", max_length=20)),
+                ("due_at", models.DateTimeField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("scenario", models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name="assignments", to="training.scenario")),
+                ("teacher", models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="issued_assignments", to=settings.AUTH_USER_MODEL)),
+                ("trainee", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="assignments", to=settings.AUTH_USER_MODEL)),
+            ],
+            options={"ordering":["-created_at"]},
+        ),
+        migrations.CreateModel(
+            name="Attempt",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("started_at", models.DateTimeField(default=django.utils.timezone.now)),
+                ("accepted_at", models.DateTimeField(blank=True, null=True)),
+                ("finished_at", models.DateTimeField(blank=True, null=True)),
+                ("reaction_time", models.FloatField(default=0)),
+                ("fill_time", models.FloatField(default=0)),
+                ("score", models.PositiveSmallIntegerField(default=0)),
+                ("grammar_score", models.PositiveSmallIntegerField(default=100)),
+                ("status", models.CharField(choices=[("active","Активно"),("finished","Завершено"),("expired","Время истекло")], default="active", max_length=20)),
+                ("errors", models.JSONField(blank=True, default=list)),
+                ("ai_feedback", models.TextField(blank=True)),
+                ("teacher_feedback", models.TextField(blank=True)),
+                ("transcript", models.JSONField(blank=True, default=list)),
+                ("assignment", models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name="attempts", to="training.assignment")),
+                ("trainee", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="attempts", to=settings.AUTH_USER_MODEL)),
+            ],
+            options={"ordering":["-started_at"]},
+        ),
+        migrations.CreateModel(
+            name="IncidentCard",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("event_type", models.CharField(blank=True, max_length=200)),
+                ("address", models.CharField(blank=True, max_length=300)),
+                ("details", models.TextField(blank=True)),
+                ("apartment", models.CharField(blank=True, max_length=30)),
+                ("entrance", models.CharField(blank=True, max_length=30)),
+                ("floor", models.CharField(blank=True, max_length=30)),
+                ("people_inside", models.CharField(blank=True, max_length=30)),
+                ("children", models.CharField(blank=True, max_length=30)),
+                ("injured", models.CharField(blank=True, max_length=30)),
+                ("open_fire", models.CharField(blank=True, max_length=30)),
+                ("services", models.JSONField(blank=True, default=list)),
+                ("operator_note", models.TextField(blank=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("attempt", models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name="card", to="training.attempt")),
+            ],
+        ),
+        migrations.CreateModel(
+            name="AttemptEvent",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("event_type", models.CharField(max_length=60)),
+                ("payload", models.JSONField(blank=True, default=dict)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("attempt", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="events", to="training.attempt")),
+            ],
+            options={"ordering":["created_at"]},
+        ),
+        migrations.CreateModel(
+            name="AuditLog",
+            fields=[
+                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                ("action", models.CharField(max_length=180)),
+                ("object_type", models.CharField(blank=True, max_length=80)),
+                ("object_id", models.CharField(blank=True, max_length=80)),
+                ("ip_address", models.GenericIPAddressField(blank=True, null=True)),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("user", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
+            ],
+            options={"ordering":["-created_at"]},
+        ),
+    ]

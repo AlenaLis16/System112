@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-head"><div><div class="crumb">Учебные карточки</div><h1>{{ title }}</h1></div></div>
+<form method="post" class="panel form-panel">{% csrf_token %}{% for field in form %}<div class="field"><label>{{ field.label }}</label>{{ field }}{% if field.help_text %}<div class="muted">{{ field.help_text }}</div>{% endif %}{% if field.errors %}<div class="field-error">{{ field.errors }}</div>{% endif %}</div>{% endfor %}{% if scenario %}<div class="field"><label>Поправка преподавателя</label><textarea name="teacher_correction" rows="3" placeholder="Что необходимо изменить или учитывать при следующих формированиях"></textarea></div>{% endif %}<div class="actions"><button class="button primary">Сохранить и утвердить</button><a class="button" href="{% url 'scenario_list' %}">Отмена</a></div></form>
+{% endblock %}
